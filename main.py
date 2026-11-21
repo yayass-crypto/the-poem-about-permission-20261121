@@ -42,6 +42,15 @@ def check_poem(text: str) -> None:
         raise ValueError("poem is only whitespace")
 
 
+def check_text_clean(text: str) -> None:
+    """The judge reads the text exactly as written: no control
+    characters other than newlines, and a clean UTF-8 round-trip."""
+    for char in text:
+        if char != "\n" and ord(char) < 0x20:
+            raise ValueError(f"control character U+{ord(char):04X} in poem")
+    text.encode("utf-8").decode("utf-8")
+
+
 def write_entry(directory: Path) -> Path:
     """Write the poem to entry.txt inside directory, return its path."""
     directory.mkdir(parents=True, exist_ok=True)
@@ -53,11 +62,14 @@ def write_entry(directory: Path) -> Path:
 def check_written(target: Path) -> None:
     """Re-read what was written and gate it again, so a bad write
     is caught here instead of in the sandbox."""
-    check_poem(target.read_text(encoding="utf-8"))
+    text = target.read_text(encoding="utf-8")
+    check_poem(text)
+    check_text_clean(text)
 
 
 def main() -> None:
     check_poem(POEM)
+    check_text_clean(POEM)
     target = write_entry(output_directory())
     check_written(target)
     print(f"wrote {target} ({len(POEM)} characters)")
